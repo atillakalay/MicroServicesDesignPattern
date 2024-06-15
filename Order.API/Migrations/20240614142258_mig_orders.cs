@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Order.API.Migrations
 {
     /// <inheritdoc />
-    public partial class mig_init : Migration
+    public partial class mig_orders : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,12 +17,12 @@ namespace Order.API.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     BuyerId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     Address_Line = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Address_Province = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Address_District = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     FailMessage = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>

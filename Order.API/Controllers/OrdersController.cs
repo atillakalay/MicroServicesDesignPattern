@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Order.API.DTOs;
 using Order.API.Models;
 using Shared;
-using static Order.API.Models.Order;
+using Shared.Events;
+using Shared.Interfaces;
 
 namespace Order.API.Controllers
 {
@@ -12,12 +13,12 @@ namespace Order.API.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly IPublishEndpoint _publishEndpoint;
+        private readonly ISendEndpointProvider _sendEndpointProvider;
 
-        public OrdersController(AppDbContext appDbContext, IPublishEndpoint publishEndpoint)
+        public OrdersController(AppDbContext appDbContext, ISendEndpointProvider sendEndpointProvider)
         {
             _context = appDbContext;
-            _publishEndpoint = publishEndpoint;
+            _sendEndpointProvider = sendEndpointProvider;
         }
 
         [HttpPost]
@@ -28,9 +29,11 @@ namespace Order.API.Controllers
             await _context.Orders.AddAsync(newOrder);
             await _context.SaveChangesAsync();
 
-            var orderCreatedEvent = CreateOrderCreatedEvent(orderCreateDto, newOrder);
+            OrderCreatedRequestEvent orderCreatedRequestEvent = CreateOrderCreatedRequestEvent(orderCreateDto, newOrder);
 
-            await _publishEndpoint.Publish(orderCreatedEvent);
+            ISendEndpoint sendEndPoint = await _sendEndpointProvider.GetSendEndpoint(new Uri($"queue:{RabbitMQSettingsConst.OrderSaga}"));
+
+            await sendEndPoint.Send<IOrderCreatedRequestEvent>(orderCreatedRequestEvent);
 
             return Ok();
         }
@@ -59,9 +62,9 @@ namespace Order.API.Controllers
             return newOrder;
         }
 
-        private OrderCreatedEvent CreateOrderCreatedEvent(OrderCreateDto orderCreateDto, Models.Order newOrder)
+        private OrderCreatedRequestEvent CreateOrderCreatedRequestEvent(OrderCreateDto orderCreateDto, Models.Order newOrder)
         {
-            var orderCreatedEvent = new OrderCreatedEvent
+            OrderCreatedRequestEvent orderCreatedEvent = new()
             {
                 BuyerId = orderCreateDto.BuyerId,
                 OrderId = newOrder.Id,
@@ -73,7 +76,7 @@ namespace Order.API.Controllers
                     CVV = orderCreateDto.Payment.CVV,
                     TotalPrice = orderCreateDto.orderItems.Sum(x => x.Price * x.Count),
                 },
-                orderItems = orderCreateDto.orderItems.Select(item => new OrderItemMessage
+                OrderItems = orderCreateDto.orderItems.Select(item => new OrderItemMessage
                 {
                     Count = item.Count,
                     ProductId = item.ProductId

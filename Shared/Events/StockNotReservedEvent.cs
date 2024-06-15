@@ -1,13 +1,14 @@
 ﻿using Shared.Interfaces;
 
-namespace Shared
+namespace Shared.Events
 {
     public class StockNotReservedEvent : IStockNotReservedEvent
     {
         public StockNotReservedEvent(Guid correlationId)
         {
-            correlationId = CorrelationId;
+            CorrelationId = correlationId;
         }
+
         public string Reason { get; set; }
 
         public Guid CorrelationId { get; }

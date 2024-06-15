@@ -11,7 +11,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseInMemoryDatabase("StockDb");
 });
-builder.Services.AddScoped<OrderCreatedEventConsumer>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -21,18 +20,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMassTransit(configure =>
 {
     configure.AddConsumer<OrderCreatedEventConsumer>();
-    configure.AddConsumer<PaymentFailedEventConsumer>();
     configure.UsingRabbitMq((context, configurator) =>
     {
         configurator.Host(builder.Configuration.GetConnectionString("RabbitMQ"));
         configurator.ReceiveEndpoint(RabbitMQSettingsConst.StockOrderCreatedEventQueueName, e =>
         {
             e.ConfigureConsumer<OrderCreatedEventConsumer>(context);
-        });
-
-        configurator.ReceiveEndpoint(RabbitMQSettingsConst.StockPaymentFailedEventQueueName, e =>
-        {
-            e.ConfigureConsumer<PaymentFailedEventConsumer>(context);
         });
     });
 });
