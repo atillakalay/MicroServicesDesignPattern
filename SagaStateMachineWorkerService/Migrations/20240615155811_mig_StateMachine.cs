@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SagaStateMachineWorkerService.Migrations
 {
     /// <inheritdoc />
-    public partial class mig_sagaState : Migration
+    public partial class mig_StateMachine : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

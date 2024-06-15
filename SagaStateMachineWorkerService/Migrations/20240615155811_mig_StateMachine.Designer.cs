@@ -12,8 +12,8 @@ using SagaStateMachineWorkerService.Models;
 namespace SagaStateMachineWorkerService.Migrations
 {
     [DbContext(typeof(OrderStateDbContext))]
-    [Migration("20240614142531_mig_sagaState")]
-    partial class mig_sagaState
+    [Migration("20240615155811_mig_StateMachine")]
+    partial class mig_StateMachine
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

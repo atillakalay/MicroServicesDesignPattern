@@ -34,8 +34,6 @@ var builder = Host.CreateDefaultBuilder(args)
                 });
             });
         });
-
-        //services.AddMassTransitHostedService();
         services.AddHostedService<Worker>();
     });
 

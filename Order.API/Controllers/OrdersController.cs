@@ -24,7 +24,7 @@ namespace Order.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(OrderCreateDto orderCreateDto)
         {
-            var newOrder = MapToOrder(orderCreateDto);
+            Models.Order newOrder = MapToOrder(orderCreateDto);
 
             await _context.Orders.AddAsync(newOrder);
             await _context.SaveChangesAsync();
@@ -40,7 +40,7 @@ namespace Order.API.Controllers
 
         private Models.Order MapToOrder(OrderCreateDto orderCreateDto)
         {
-            var newOrder = new Models.Order
+            return new Models.Order
             {
                 BuyerId = orderCreateDto.BuyerId,
                 Status = OrderStatus.Suspend,
@@ -59,12 +59,11 @@ namespace Order.API.Controllers
                 }).ToList(),
                 FailMessage = string.Empty
             };
-            return newOrder;
         }
 
         private OrderCreatedRequestEvent CreateOrderCreatedRequestEvent(OrderCreateDto orderCreateDto, Models.Order newOrder)
         {
-            OrderCreatedRequestEvent orderCreatedEvent = new()
+            return new OrderCreatedRequestEvent
             {
                 BuyerId = orderCreateDto.BuyerId,
                 OrderId = newOrder.Id,
@@ -82,7 +81,6 @@ namespace Order.API.Controllers
                     ProductId = item.ProductId
                 }).ToList()
             };
-            return orderCreatedEvent;
         }
     }
 }

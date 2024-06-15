@@ -2,8 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Stock.API.Models;
 
-
-
 namespace Stock.API.Controllers
 {
     [Route("api/[controller]")]
@@ -11,14 +9,24 @@ namespace Stock.API.Controllers
     public class StocksController : ControllerBase
     {
         private readonly AppDbContext _context;
+
         public StocksController(AppDbContext context)
         {
             _context = context;
         }
+
+        [HttpGet]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _context.Stocks.ToListAsync());
+            try
+            {
+                var stocks = await _context.Stocks.ToListAsync();
+                return Ok(stocks);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Internal server error");
+            }
         }
-
     }
 }

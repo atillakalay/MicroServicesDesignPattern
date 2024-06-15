@@ -1,6 +1,6 @@
 ﻿using Shared.Interfaces;
 
-namespace Shared.Events
+namespace Shared
 {
     public class OrderCreatedEvent : IOrderCreatedEvent
     {

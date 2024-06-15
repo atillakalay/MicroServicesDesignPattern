@@ -1,6 +1,6 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Shared;
+using Shared.Events;
 using Shared.Interfaces;
 using Stock.API.Models;
 
@@ -9,61 +9,57 @@ namespace Stock.API.Consumers
     public class OrderCreatedEventConsumer : IConsumer<IOrderCreatedEvent>
     {
         private readonly AppDbContext _context;
-        private ILogger<OrderCreatedEventConsumer> _logger;
-        private readonly ISendEndpointProvider _sendEndpointProvider;
+        private readonly ILogger<OrderCreatedEventConsumer> _logger;
         private readonly IPublishEndpoint _publishEndpoint;
 
         public OrderCreatedEventConsumer(AppDbContext context, ILogger<OrderCreatedEventConsumer> logger,
-            ISendEndpointProvider sendEndpointProvider, IPublishEndpoint publishEndpoint)
+            IPublishEndpoint publishEndpoint)
         {
             _context = context;
             _logger = logger;
-            _sendEndpointProvider = sendEndpointProvider;
             _publishEndpoint = publishEndpoint;
         }
 
         public async Task Consume(ConsumeContext<IOrderCreatedEvent> context)
         {
-            var stockResult = new List<bool>();
+            List<bool> stockResult = new();
 
             foreach (var item in context.Message.OrderItems)
             {
-                stockResult.Add(
-                    await _context.Stocks.AnyAsync(x => x.ProductId == item.ProductId && x.Count > item.Count));
-            }
+                bool isStockAvailable = await _context.Stocks.AnyAsync(x => x.ProductId == item.ProductId && x.Count >= item.Count);
+                stockResult.Add(isStockAvailable);
 
-            if (stockResult.All(x => x.Equals(true)))
-            {
-                foreach (var item in context.Message.OrderItems)
+                if (!isStockAvailable)
                 {
-                    var stock = await _context.Stocks.FirstOrDefaultAsync(x => x.ProductId == item.ProductId);
-
-                    if (stock != null)
+                    await _publishEndpoint.Publish(new StockNotReservedEvent(context.Message.CorrelationId)
                     {
-                        stock.Count -= item.Count;
-                    }
+                        Reason = "Not enough stock"
+                    });
 
-                    await _context.SaveChangesAsync();
+                    _logger.LogInformation($"Not enough stock for CorrelationId Id :{context.Message.CorrelationId}");
+                    return;
                 }
-
-                _logger.LogInformation($"Stock was reserved for CorrelationId Id :{context.Message.CorrelationId}");
-
-                StockReservedEvent stockReservedEvent = new StockReservedEvent(context.Message.CorrelationId)
-                {
-                    OrderItems = context.Message.OrderItems
-                };
-
-                await _publishEndpoint.Publish(stockReservedEvent);
             }
-            else
+
+            foreach (var item in context.Message.OrderItems)
             {
-                await _publishEndpoint.Publish(new StockNotReservedEvent(context.Message.CorrelationId)
+                Models.Stock? stock = await _context.Stocks.FirstOrDefaultAsync(x => x.ProductId == item.ProductId);
+                if (stock != null)
                 {
-                    Reason = "Not enough stock"
-                });
-
-                _logger.LogInformation($"Not enough stock for CorrelationId Id :{context.Message.CorrelationId}");
+                    stock.Count -= item.Count;
+                }
             }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"Stock was reserved for CorrelationId Id :{context.Message.CorrelationId}");
+
+            StockReservedEvent stockReservedEvent = new StockReservedEvent(context.Message.CorrelationId)
+            {
+                OrderItems = context.Message.OrderItems
+            };
+
+            await _publishEndpoint.Publish(stockReservedEvent);
         }
     }
 }
