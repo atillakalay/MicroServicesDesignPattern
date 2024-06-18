@@ -1,6 +1,6 @@
 # ASP.NET Core 8.0 ile Mikroservis Tasarım Desenleri
 
-## Kurs Tanıtımı
+## Repo Tanıtımı
 
 Bu repoda, mikroservis mimarilerinde kullanabileceğimiz beş temel tasarım desenini öğreneceksiniz. Tüm örnekler **ASP.NET Core API (Net 8.0)** kullanılarak geliştirilmiştir.
 
